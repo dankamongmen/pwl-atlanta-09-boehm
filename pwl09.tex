@@ -56,6 +56,13 @@ tmp = my_data;
 
 \begin{frame}
 \frametitle{doubly-checked lazy initialization disasters}
+Bad idea: Bypass ``expensive'' lock acquisition in common (initialized) case.
+\vfill
+Problem 1: Compiler reorders writes to \texttt{my\_data}, \texttt{init\_flag}. Thread sees a high init\_flag, but my\_data is not actually prepared, \texttt{tmp} gets bogus value.
+\vfill
+Problem 2: Processor reorders stores to \texttt{my\_data}, \texttt{init\_flag}. Without lock, there's no memory barrier ensuring ordering visibility, same result as above.
+\vfill
+Proper solutions: {\texttt{pthread\_once()}}, C++11/C11 \texttt{call\_once()}, C++11 static block scope (can be optimal), lift initialization out of concurrent path (probably optimal)
 \end{frame}
 
 \begin{frame}
@@ -111,6 +118,9 @@ if (my_counter > my_old_counter) {
 
 \begin{frame}
 \frametitle{reality is a lie}
+Bad idea: Avoid lock complexity between publisher and polling consumer signalling via a shared integer where all values are acceptable.
+\vfill
+Problem: Compiler never actually generates temporary variable, reloading from the shared variable, which changes between conditionals. Thread ``impossibly'' branches into the grim lands of undefined behavior, is eaten by a grue.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -134,17 +144,20 @@ t2() { f(positives); count = 0; }
 
 \begin{frame}
 \frametitle{adding writes results in fewer writes}
+Bad idea: Avoid lock complexity by only writing a single constant (with only positive inputs, only 0 ought ever be written to count).
+\vfill
+Problem: Compiler uses register for accumulation, writes back modified result.
 \end{frame}
 
 \begin{frame}[fragile]
 \frametitle{jiro dreams of zero}
 \begin{lstlisting}
-thread2_reg = count; // Reads garbage value, call it 17
+thread2_reg = count; // Reads 17
 count = 0; // thread 1
 count = thread2_reg; // Writes 17
 thread1_reg = count; // Reads 17
 count = 0; // thread 2
-count = thread1_reg; // Writes 17, life sucks :(
+count = thread1_reg; // Writes 17, aieeeee
 \end{lstlisting}
 \end{frame}
 
