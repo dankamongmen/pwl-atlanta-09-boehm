@@ -1,4 +1,5 @@
 \documentclass{beamer}
+\usepackage{listings}
 \usetheme{Pittsburgh}
 \usecolortheme{crane}
 \title{How to Miscompile Programs\\ with ``Benign'' Data Races}
@@ -38,8 +39,19 @@ Data races are difficult to detect in mainstream PRAM-model languages, Recognizi
 \frametitle{data races, how do they work}
 \end{frame}
 
-\begin{frame}
-\frametitle{source code 1}
+\begin{frame}[fragile]
+\frametitle{source: let's speed up lazy init}
+\begin{lstlisting}
+if (!init_flag) {
+  lock();
+  if (!init_flag) {
+    my_data = ...;
+    init_flag = true;
+  }
+  unlock();
+}
+tmp = my_data;
+\end{lstlisting}
 \end{frame}
 
 \begin{frame}
@@ -50,32 +62,90 @@ Data races are difficult to detect in mainstream PRAM-model languages, Recognizi
 \frametitle{why would this happen?}
 \end{frame}
 
-\begin{frame}
-\frametitle{source code 2}
+\begin{frame}[fragile]
+\frametitle{source: let's turn a light off and on}
+\begin{lstlisting}
+t1() {
+  while(1) {
+    usleep(1000);
+    set_light(brightness);
+  }
+}
+
+t2() {
+  wait_until(event) {
+    brightness = (t++ % 2) ? -1 : 1;
+  }
+}
+\end{lstlisting}
 \end{frame}
 
 \begin{frame}
 \frametitle{both values are valid, until they're not}
+Bad idea: Avoid lock complexity between publisher and polling consumer signalling via a bimodal shared integer.
+\vfill
+Problem 1: Compiler optimizes away check entirely, as there's no way for the variable to be modified in consumer control flow. Code never runs.
+\vfill
+Problem 2: Architecture doesn't support integer width, compiler makes up for it in multipart software load. Alternatively, compiler materializes constant on the fly in multistep operation. Thread sees value outside the two expected values.
+\vfill
+Proper solution: atomics, or good ol' locks for complex data\\
+  (\textit{not} \texttt{volatile}!)
 \end{frame}
 
-\begin{frame}
-\frametitle{source code 3}
+\begin{frame}[fragile]
+\frametitle{source: let's write an arbitrary value}
+\begin{lstlisting}
+int my_counter = counter; // Read global
+int (*my_func)(int);
+if (my_counter > my_old_counter) {
+  ... // Consume data
+  my_func = ...;
+  ... // Do some more consumer work
+}
+... // Do some other work
+if (my_counter > my_old_counter) {
+   ... my_func(...) ...
+}
+\end{lstlisting}
 \end{frame}
 
 \begin{frame}
 \frametitle{reality is a lie}
 \end{frame}
 
-\begin{frame}
-\frametitle{source code 4}
+\begin{frame}[fragile]
+\frametitle{source: let's count negatives}
+\begin{lstlisting}
+static int count = 17;
+
+f(x) {
+  for (p = x; p ; p = p->next) {
+    if (p->data < 0) {
+      count++;
+    }
+  }
+}
+
+t1() { count = 0; f(positives); }
+
+t2() { f(positives); count = 0; }
+\end{lstlisting}
 \end{frame}
 
 \begin{frame}
 \frametitle{adding writes results in fewer writes}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
 \frametitle{jiro dreams of zero}
+\begin{lstlisting}
+thread2_reg = count; // Reads garbage value, call it 17
+count = 0; // thread 1
+count = thread2_reg; // Writes 17
+thread1_reg = count; // Reads 17
+count = 0; // thread 2
+count = thread1_reg; // Writes 17, life sucks :(
+\end{lstlisting}
 \end{frame}
 
 \begin{frame}
