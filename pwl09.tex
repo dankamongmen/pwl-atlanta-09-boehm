@@ -94,8 +94,9 @@ t1() {
 }
 
 t2() {
+  t = 0; brightness = 0;
   wait_until(event) {
-    brightness = (t++ % 2) ? -1 : 1;
+    brightness = (t++ % 2) ? 0 : 4;
   }
 }
 \end{lstlisting}
