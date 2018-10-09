@@ -19,7 +19,12 @@
 Effects of data races depend on compilation flags, compiler version, hardware,
 and OS.
 \vfill
-Attempts to assign useful semantics to data races (Java, .NET) have largely failed.
+Attempts to assign useful semantics to data races (Java, .NET) prohibit
+classes of compiler optimizations.
+\vfill
+Compilers can make any transformation that preserve observational
+expectations \textit{within a thread}. Across threads, all bets are off without
+synchronization.
 \end{frame}
 
 \begin{frame}
