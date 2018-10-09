@@ -184,7 +184,22 @@ no fuss.
 Locking is cheap. Contention is expensive.
 \vfill
 Worried about performance? \texttt{perf-lock}, you're welcome. Off-CPU analysis
-can currently best be effected via perf+eBPF cantrips.
+can currently best be effected via \texttt{perf}+eBPF cantrips.
+\end{frame}
+
+\begin{frame}
+\frametitle{does this apply to me, a non-dinosaur?}
+Any PRAM-model concurrency implementation allowing sharing of mutable data
+is susceptible to data races, and most further susceptible to unexpected
+results due to compiler/interpreter optimization.
+\vfill
+\begin{itemize}
+  \item Go
+  \item Rust (unsafe dialect)
+  \item Java
+  \item Python
+  \item Javascript...
+\end{itemize}
 \end{frame}
 
 \begin{frame}
