@@ -1,0 +1,110 @@
+\documentclass{beamer}
+\usetheme{Pittsburgh}
+\usecolortheme{crane}
+\title{How to Miscompile Programs\\ with ``Benign'' Data Races}
+\subtitle{Hans-J.\ Boehm, HotPar 2011}
+\author{nick black {\texttt{<dankamongmen@gmail.com>}}}
+\institute{Atlanta PWL \#09, 2018-10-09}
+\date{}
+\begin{document}
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+\frametitle{executive summary}
+``Benign'' data races do not exist at the translated level.
+\vfill
+Effects of data races depend on compilation flags, compiler version, hardware,
+and OS.
+\vfill
+Attempts to assign semantics to data races (Java, .NET) have largely failed.
+\end{frame}
+
+\begin{frame}
+\frametitle{historical context and results}
+Multithread-aware memory model (declaring all data races to be errors having undefined behavior) only added to C11, C++11.
+\vfill
+Portable, performant atomics added by C11 \texttt{<stdatomic.h>}, C++11 \texttt{<atomic>}.
+\vfill
+Complex compiler/CPU technology stresses naive mental models.
+\vfill
+Race detection tool research at the time hoped to distinguish ``destructive'' from ``benign'' races (this paper is, in part, a response to that trend).
+\vfill
+Data races are difficult to detect in mainstream PRAM-model languages, Recognizing their seriousness motivated programming language research, better software engineering practices, and work on tools.
+\end{frame}
+
+\begin{frame}
+\frametitle{data races, how do they work}
+\end{frame}
+
+\begin{frame}
+\frametitle{source code 1}
+\end{frame}
+
+\begin{frame}
+\frametitle{doubly-checked lazy initialization disasters}
+\end{frame}
+
+\begin{frame}
+\frametitle{why would this happen?}
+\end{frame}
+
+\begin{frame}
+\frametitle{source code 2}
+\end{frame}
+
+\begin{frame}
+\frametitle{both values are valid, until they're not}
+\end{frame}
+
+\begin{frame}
+\frametitle{source code 3}
+\end{frame}
+
+\begin{frame}
+\frametitle{reality is a lie}
+\end{frame}
+
+\begin{frame}
+\frametitle{source code 4}
+\end{frame}
+
+\begin{frame}
+\frametitle{adding writes results in fewer writes}
+\end{frame}
+
+\begin{frame}
+\frametitle{jiro dreams of zero}
+\end{frame}
+
+\begin{frame}
+\frametitle{come on Mary, don't fear the mutex}
+\end{frame}
+
+\begin{frame}
+\frametitle{is this relevant to non-dinosaurs?}
+\end{frame}
+
+\begin{frame}
+\frametitle{tools and techniques for avoiding data races}
+\begin{itemize}
+\item Languages supporting non-PRAM models (CSP, immutable MP, etc.)
+\item Scope-based synchronization (C++ \texttt{std::lock\_guard})
+\item Raw checkers (clang's {\texttt{scan-build}}, Java's RacerD)
+\item Annotations (clang's TSA, {\texttt{javax.annotation.concurrent}})
+\item Dynamic analysis tools aplenty:
+\end{itemize}
+\vfill
+\begin{columns}
+\column{.5\textwidth}
+Go 1.1's \texttt{-race}
+\vfill
+TSan (clang 3.4+), ThreadSanitizer (gcc 4.8.1+)
+\vfill
+Valgrind's \texttt{helgrind}
+\column{.5\textwidth}
+\includegraphics[width=1\textwidth]{maxresdefault.jpg}
+\end{columns}
+\end{frame}
+\end{document}
