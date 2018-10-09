@@ -14,7 +14,7 @@
 
 \begin{frame}
 \frametitle{executive summary}
-``Benign'' data races do not exist at the translated level.
+``Benign'' data races do not exist at the source level.
 \vfill
 Effects of data races depend on compilation flags, compiler version, hardware,
 and OS.
@@ -37,6 +37,11 @@ Data races are difficult to detect in mainstream PRAM-model languages, Recognizi
 
 \begin{frame}
 \frametitle{data races, how do they work}
+``We define a data race as simultaneous access to the same
+memory location by multiple threads, where at least one
+of the accesses modifies the memory location.''
+\vfill
+Essentially equivalent to e.g. Java's ``happens-before'' definitions.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -67,6 +72,15 @@ Proper solutions: {\texttt{pthread\_once()}}, C++11/C11 \texttt{call\_once()}, C
 
 \begin{frame}
 \frametitle{why would this happen?}
+\textit{Store motion} eliminates redundant assignments by lifting them
+out of subblocks. \textit{Instruction scheduling} optimizes for instruction
+cache loads, frontend decoding, and OOO resources, and can move independent
+code arbitrarily. \textit{Dependency optimization} might perform a write
+earlier, to have it ready by the time of its use.
+\vfill
+Processor store reordering is performed to eliminate redundant stores,
+make better utilization of buses/caches, better balance bank accesses,
+and reduce interprocessor traffic.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -129,7 +143,7 @@ Problem: Compiler never actually generates temporary variable, reloading from th
 static int count = 17;
 
 f(x) {
-  for (p = x; p ; p = p->next) {
+  for (p = x ; p ; p = p->next) {
     if (p->data < 0) {
       count++;
     }
@@ -162,7 +176,15 @@ count = thread1_reg; // Writes 17, aieeeee
 \end{frame}
 
 \begin{frame}
-\frametitle{come on Mary, don't fear the mutex}
+\frametitle{come on mary, don't fear the mutex}
+Acquisition of an uncontended Linux mutex since 2.6.0 (2003) is merely an
+atomic lock instruction on a memory location. No system call, no bus locking.
+no fuss.
+\vfill
+Locking is cheap. Contention is expensive.
+\vfill
+Worried about performance? \texttt{perf-lock}, you're welcome. Off-CPU analysis
+can currently best be effected via perf+eBPF cantrips.
 \end{frame}
 
 \begin{frame}
@@ -173,7 +195,7 @@ count = thread1_reg; // Writes 17, aieeeee
 \frametitle{tools and techniques for avoiding data races}
 \begin{itemize}
 \item Languages supporting non-PRAM models (CSP, immutable MP, etc.)
-\item Scope-based synchronization (C++ \texttt{std::lock\_guard})
+\item Scope-based RAII synchronization (C++ \texttt{std::lock\_guard})
 \item Raw checkers (clang's {\texttt{scan-build}}, Java's RacerD)
 \item Annotations (clang's TSA, {\texttt{javax.annotation.concurrent}})
 \item Dynamic analysis tools aplenty:
